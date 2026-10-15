@@ -3238,6 +3238,29 @@ impl<W: LayoutElement> Layout<W> {
         workspace.toggle_window_floating(window);
     }
 
+    /// Minimizes a floating window; activating it restores it.
+    pub fn minimize_window(&mut self, window: Option<&W::Id>) {
+        if let Some(InteractiveMoveState::Moving(move_)) = &self.interactive_move {
+            if window.is_none() || window == Some(move_.tile.window().id()) {
+                return;
+            }
+        }
+
+        let workspace = if let Some(window) = window {
+            self.workspaces_mut().find(|ws| ws.has_window(window))
+        } else {
+            self.active_workspace_mut()
+        };
+
+        if let Some(workspace) = workspace {
+            workspace.minimize_window(window);
+        }
+    }
+
+    pub fn is_minimized(&self, window: &W::Id) -> bool {
+        self.workspaces().any(|(_, _, ws)| ws.is_minimized(window))
+    }
+
     pub fn set_window_floating(&mut self, window: Option<&W::Id>, floating: bool) {
         if let Some(InteractiveMoveState::Moving(move_)) = &mut self.interactive_move {
             if window.is_none() || window == Some(move_.tile.window().id()) {

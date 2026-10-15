@@ -15,6 +15,7 @@ use super::*;
 
 mod animations;
 mod fullscreen;
+mod minimize;
 
 impl<W: LayoutElement> Default for Layout<W> {
     fn default() -> Self {
@@ -614,6 +615,10 @@ enum Op {
     },
     ExpandColumnToAvailableWidth,
     ToggleWindowFloating {
+        #[proptest(strategy = "proptest::option::of(1..=5usize)")]
+        id: Option<usize>,
+    },
+    MinimizeWindow {
         #[proptest(strategy = "proptest::option::of(1..=5usize)")]
         id: Option<usize>,
     },
@@ -1353,6 +1358,10 @@ impl Op {
             Op::ToggleWindowFloating { id } => {
                 let id = id.filter(|id| layout.has_window(id));
                 layout.toggle_window_floating(id.as_ref());
+            }
+            Op::MinimizeWindow { id } => {
+                let id = id.filter(|id| layout.has_window(id));
+                layout.minimize_window(id.as_ref());
             }
             Op::SetWindowFloating { id, floating } => {
                 let id = id.filter(|id| layout.has_window(id));

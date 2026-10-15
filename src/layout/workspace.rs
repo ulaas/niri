@@ -472,6 +472,32 @@ impl<W: LayoutElement> Workspace<W> {
         self.floating.has_window(id)
     }
 
+    pub fn is_minimized(&self, id: &W::Id) -> bool {
+        self.floating.is_minimized(id)
+    }
+
+    /// Minimizes a floating window. Tiled windows can't be minimized.
+    ///
+    /// Activating the window restores it.
+    pub fn minimize_window(&mut self, id: Option<&W::Id>) -> bool {
+        let Some(id) = id
+            .cloned()
+            .or_else(|| self.active_window().map(|win| win.id().clone()))
+        else {
+            return false;
+        };
+
+        if !self.floating.minimize_window(&id) {
+            return false;
+        }
+
+        if !self.floating.has_visible_tiles() {
+            self.floating_is_active = FloatingActive::No;
+        }
+
+        true
+    }
+
     pub fn current_output(&self) -> Option<&Output> {
         self.output.as_ref()
     }
@@ -678,7 +704,9 @@ impl<W: LayoutElement> Workspace<W> {
                 }
             }
             WorkspaceAddWindowTarget::NextTo(next_to) => {
-                let activate = activate.map_smart(|| self.active_window().unwrap().id() == next_to);
+                // With every window minimized there may be no active window.
+                let activate = activate
+                    .map_smart(|| self.active_window().is_some_and(|win| win.id() == next_to));
 
                 let floating_has_window = self.floating.has_window(next_to);
 
@@ -769,12 +797,12 @@ impl<W: LayoutElement> Workspace<W> {
 
     fn update_focus_floating_tiling_after_removing(&mut self, removed_from_floating: bool) {
         if removed_from_floating {
-            if self.floating.is_empty() {
+            if !self.floating.has_visible_tiles() {
                 self.floating_is_active = FloatingActive::No;
             }
         } else {
             // Scrolling should remain focused if both are empty.
-            if self.scrolling.is_empty() && !self.floating.is_empty() {
+            if self.scrolling.is_empty() && self.floating.has_visible_tiles() {
                 self.floating_is_active = FloatingActive::Yes;
             }
         }
@@ -1499,8 +1527,8 @@ impl<W: LayoutElement> Workspace<W> {
     }
 
     pub fn switch_focus_floating_tiling(&mut self) {
-        if self.floating.is_empty() {
-            // If floating is empty, keep focus on scrolling.
+        if !self.floating.has_visible_tiles() {
+            // If floating is empty (or fully minimized), keep focus on scrolling.
             return;
         } else if self.scrolling.is_empty() {
             // If floating isn't empty but scrolling is, keep focus on floating.
@@ -1617,9 +1645,9 @@ impl<W: LayoutElement> Workspace<W> {
     ) -> impl Iterator<Item = (&Tile<W>, Point<f64, Logical>, bool)> {
         let scrolling = self.scrolling.tiles_with_render_positions();
 
-        let floating = self.floating.tiles_with_render_positions();
+        let floating = self.floating.tiles_with_render_positions_and_visibility();
         let visible = self.is_floating_visible();
-        let floating = floating.map(move |(tile, pos)| (tile, pos, visible));
+        let floating = floating.map(move |(tile, pos, shown)| (tile, pos, visible && shown));
 
         floating.chain(scrolling)
     }
@@ -1798,8 +1826,9 @@ impl<W: LayoutElement> Workspace<W> {
         if self.is_floating_visible() {
             if let Some(rv) = self
                 .floating
-                .tiles_with_render_positions()
-                .find_map(|(tile, tile_pos)| HitType::hit_tile(tile, tile_pos, pos))
+                .tiles_with_render_positions_and_visibility()
+                .filter(|(_, _, visible)| *visible)
+                .find_map(|(tile, tile_pos, _)| HitType::hit_tile(tile, tile_pos, pos))
             {
                 return Some(rv);
             }
@@ -2066,10 +2095,10 @@ impl<W: LayoutElement> Workspace<W> {
         assert!(Rc::ptr_eq(&self.options, self.floating.options()));
         self.floating.verify_invariants();
 
-        if self.floating.is_empty() {
+        if !self.floating.has_visible_tiles() {
             assert!(
                 !self.floating_is_active.get(),
-                "when floating is empty it must never be active"
+                "when floating is empty or fully minimized it must never be active"
             );
         } else if self.scrolling.is_empty() {
             assert!(
