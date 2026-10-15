@@ -1465,7 +1465,10 @@ impl<W: LayoutElement> FloatingSpace<W> {
 
         if let Some(id) = &self.active_window_id {
             assert!(self.contains(id), "active window must be present in tiles");
-            assert!(!self.is_minimized(id), "active window must not be minimized");
+            assert!(
+                !self.is_minimized(id),
+                "active window must not be minimized"
+            );
         } else {
             assert!(
                 !self.has_visible_tiles(),

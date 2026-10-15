@@ -1364,3 +1364,49 @@ fn repeated_size_request() {
         @""
     );
 }
+
+#[test]
+fn client_minimize_request_minimizes_floating_window() {
+    let (mut f, id, surface) = set_up();
+
+    f.niri().layout.toggle_window_floating(None);
+    f.double_roundtrip(id);
+    let _ = f.client(id).window(&surface).recent_configures();
+
+    f.client(id).window(&surface).set_minimized();
+    f.double_roundtrip(id);
+
+    let niri = f.niri();
+    let (_, mapped) = niri.layout.windows().next().unwrap();
+    assert!(mapped.is_minimized());
+    let window = mapped.window.clone();
+    assert!(niri.layout.focus().is_none());
+
+    // The window was deactivated.
+    assert_snapshot!(
+        f.client(id).window(&surface).format_recent_configures(),
+        @"size: 936 × 1048, bounds: 1920 × 1080, states: []"
+    );
+
+    // Activating restores it.
+    f.niri().layout.activate_window(&window);
+    f.double_roundtrip(id);
+
+    let (_, mapped) = f.niri().layout.windows().next().unwrap();
+    assert!(!mapped.is_minimized());
+    assert_snapshot!(
+        f.client(id).window(&surface).format_recent_configures(),
+        @"size: 936 × 1048, bounds: 1920 × 1080, states: [Activated]"
+    );
+}
+
+#[test]
+fn client_minimize_request_ignored_for_tiled_window() {
+    let (mut f, id, surface) = set_up();
+
+    f.client(id).window(&surface).set_minimized();
+    f.double_roundtrip(id);
+
+    let (_, mapped) = f.niri().layout.windows().next().unwrap();
+    assert!(!mapped.is_minimized());
+}
