@@ -338,6 +338,9 @@ pub enum Action {
     ToggleWindowFloating,
     #[knuffel(skip)]
     ToggleWindowFloatingById(u64),
+    MinimizeWindow,
+    #[knuffel(skip)]
+    MinimizeWindowById(u64),
     MoveWindowToFloating,
     #[knuffel(skip)]
     MoveWindowToFloatingById(u64),
@@ -674,6 +677,8 @@ impl From<niri_ipc::Action> for Action {
             niri_ipc::Action::ToggleWindowFloating { id: Some(id) } => {
                 Self::ToggleWindowFloatingById(id)
             }
+            niri_ipc::Action::MinimizeWindow { id: None } => Self::MinimizeWindow,
+            niri_ipc::Action::MinimizeWindow { id: Some(id) } => Self::MinimizeWindowById(id),
             niri_ipc::Action::MoveWindowToFloating { id: None } => Self::MoveWindowToFloating,
             niri_ipc::Action::MoveWindowToFloating { id: Some(id) } => {
                 Self::MoveWindowToFloatingById(id)

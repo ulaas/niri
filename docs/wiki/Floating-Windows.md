@@ -14,3 +14,17 @@ Use `switch-focus-between-floating-and-tiling` to switch the focus between the t
 When focused on the floating layout, binds (like `focus-column-right`) will operate on the floating window.
 
 You can precisely position a floating window with a command like `niri msg action move-floating-window -x 100 -y 200`.
+
+### Minimizing
+
+Floating windows can be minimized with the `minimize-window` bind (or `niri msg action minimize-window --id <id>`).
+A minimized window is hidden but stays on its workspace, and focus moves to the next floating window, or to the tiling layout.
+Focusing the window again (for example with `focus-window`, or by clicking it in a taskbar) restores it.
+
+Tiled windows cannot be minimized.
+
+```kdl
+binds {
+    Mod+Shift+M { minimize-window; }
+}
+```

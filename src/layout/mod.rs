@@ -241,6 +241,7 @@ pub trait LayoutElement {
     fn set_activated(&mut self, active: bool);
     fn set_active_in_column(&mut self, active: bool);
     fn set_floating(&mut self, floating: bool);
+    fn set_minimized(&mut self, minimized: bool);
     fn set_bounds(&self, bounds: Size<i32, Logical>);
     fn is_ignoring_opacity_window_rule(&self) -> bool;
 
@@ -4917,6 +4918,7 @@ impl<W: LayoutElement> Layout<W> {
 
             win.set_active_in_column(true);
             win.set_floating(move_.is_floating);
+            win.set_minimized(false);
             win.set_activated(true);
 
             win.set_interactive_resize(None);

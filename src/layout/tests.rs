@@ -232,6 +232,8 @@ impl LayoutElement for TestWindow {
 
     fn set_floating(&mut self, _floating: bool) {}
 
+    fn set_minimized(&mut self, _minimized: bool) {}
+
     fn sizing_mode(&self) -> SizingMode {
         self.0.sizing_mode.get()
     }

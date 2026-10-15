@@ -817,6 +817,16 @@ pub enum Action {
         #[cfg_attr(feature = "clap", arg(long))]
         id: Option<u64>,
     },
+    /// Minimize a floating window.
+    ///
+    /// Focusing the window (e.g. with `focus-window`) restores it.
+    MinimizeWindow {
+        /// Id of the window to minimize.
+        ///
+        /// If `None`, uses the focused window.
+        #[cfg_attr(feature = "clap", arg(long))]
+        id: Option<u64>,
+    },
     /// Move the focused window to the floating layout.
     MoveWindowToFloating {
         /// Id of the window to move.
@@ -1358,6 +1368,12 @@ pub struct Window {
     ///
     /// If the window isn't floating then it is in the tiling layout.
     pub is_floating: bool,
+    /// Whether this window is minimized.
+    ///
+    /// Only floating windows can be minimized. A minimized window is hidden but stays on its
+    /// workspace; focusing it restores it.
+    #[serde(default)]
+    pub is_minimized: bool,
     /// Whether this window requests your attention.
     pub is_urgent: bool,
     /// Position- and size-related properties of the window.

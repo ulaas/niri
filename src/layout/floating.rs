@@ -1253,11 +1253,12 @@ impl<W: LayoutElement> FloatingSpace<W> {
 
     pub fn refresh(&mut self, is_active: bool, is_focused: bool) {
         let active = self.active_window_id.clone();
-        for tile in &mut self.tiles {
+        for (tile, data) in zip(&mut self.tiles, &self.data) {
             let win = tile.window_mut();
 
             win.set_active_in_column(true);
             win.set_floating(true);
+            win.set_minimized(data.minimized);
 
             let mut is_active = is_active && Some(win.id()) == active.as_ref();
             if self.options.deactivate_unfocused_windows {
